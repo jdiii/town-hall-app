@@ -1,0 +1,19 @@
+doctype html
+html
+    head
+        link(href='https://fonts.googleapis.com/css?family=Roboto:400,100,300,500', rel='stylesheet')
+        link(rel='stylesheet', href='/stylesheets/login.css')
+    body
+        section.loginParent
+            .login
+                .loginChild
+                    img(src=logo style="width:200px")
+                .loginChild(style="flex-grow:2")
+                .loginChild
+                    span Welcome to
+                    br
+                    span.loginTitle #{title}
+                .loginChild(style="flex-grow:2")
+                .loginChild
+                    a(href="/auth/google")
+                        span.loginButton Log In
