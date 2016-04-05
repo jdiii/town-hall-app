@@ -5,7 +5,7 @@ town-hall-app is meant for start-ups who want to empower team members to ask and
 
 Questions and upvotes are sent in real-time to other participants. Moderator interactions also propogate in real-time.
 
-Built on express and socket.io. Requires node.js and mongodb.
+Built on express, socket.io, and passport.js. Requires node.js, mongodb, and a Google account. Authentication is by Google OAuth only.
 
 ## Installation
   1. clone `https://github.com/jdiii/town-hall-app/`
@@ -27,6 +27,12 @@ You can configure a custom app title and logo. Also, you can configure a moderat
 
 ## Moderation
 Mod powers include marking a question as "answered" or "deleted". Both these options remove the question from public view and note them in the db accordingly. You can log in as a moderator by going to `/mod?secret={{secret}}`. The moderator secret password can be configured in `config/config.js`. 
+
+## Security
+  * Requests to the main app page are authenticated using Google OAuth
+  * You can limit access by Google Apps domain, but not user
+  * Asynchronous requests between server and client are _not_ authenticated
+  * All requests are made over HTTP
 
 ## License
 The MIT License (MIT)
