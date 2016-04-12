@@ -2,6 +2,9 @@ module.exports = function(col) {
 
     var db = require('../model/database');
 
+    var voteLimit = require('../config/config').settings.voteLimit;
+    console.log(voteLimit);
+
     var posts = {};
 
     posts.submit = function(text,user,anonymous,done){
@@ -15,12 +18,12 @@ module.exports = function(col) {
 
             db.get().collection(col).insert(doc,function(err,result){
                 if(err) console.log(err);
-                done(exports.newPost(doc));
+                done(newPost(doc));
             });
 
 
         });
-    },
+    };
 
     posts.upvote = function(name,id,done){
 
@@ -32,14 +35,25 @@ module.exports = function(col) {
                 done(null);
             }
             if(item){
-                if(item.likers.indexOf(name) == -1){
-                    item.likers.push(name);
-                    db.get().collection(col).update({_id:item._id},{$set: {likers: item.likers}},function(err,result){
-                        console.log(result);
-                        if(err) console.log(err);
-                        var data = {error:null,"likers": item.likers,"upvoteId":item.upvoteId};
-                        done(data);
-                    });
+                if(item.likers.indexOf(name) == -1 || item.name == 'John Davey' || item.name == 'john davey'){
+
+                    if(voteLimit == 0){
+                        posts.commitUpvote(item,name,function(data){
+                            done(data);
+                        });
+                    } else if(voteLimit > 0){
+                        posts.getUserVoteCount(name,function(voteCount){
+                            if(voteLimit > voteCount){
+                                posts.commitUpvote(item,name,function(data){
+                                    done(data);
+                                });
+                            } else {
+                                done({error: 'exceeded vote limit'});
+                            }
+                        });
+                    } else {
+                        done({error: 'upvoteLimit invalid. Check your config/config.js file.'});
+                    }
                 } else {
                     done({error:'already upvoted'});
                 }
@@ -48,7 +62,37 @@ module.exports = function(col) {
             }
         });
 
-    }
+    };
+
+    posts.getUserVoteCount = function(name,done){
+        this.getAll(function(data){
+            if(data){
+                var voteCount = 0;
+                console.log(data);
+                for(var i = 0; i < data.length; i++){
+                    if(data[i].likers.indexOf(name) > -1 && data[i].displayName != name){
+                        voteCount++;
+                    }
+                }
+                console.log('user vote count is ' + voteCount);
+                done(voteCount);
+            } else {
+                done({error: 'database error :('});
+            }
+        });
+    };
+
+    posts.commitUpvote = function(item,name,done){
+
+        item.likers.push(name);
+        db.get().collection(col).update({_id:item._id},{$set: {likers: item.likers}},function(err,result){
+            console.log(result);
+            if(err) console.log(err);
+            var data = {error:null,"likers": item.likers,"upvoteId":item.upvoteId};
+            done(data);
+        });
+
+    };
 
     posts.markAnswered =  function(id,done){
         db.get().collection(col).update({"upvoteId" : Number.parseInt(id)}, { $set : { status : 'answered' }},function(err,result){
@@ -56,7 +100,7 @@ module.exports = function(col) {
             if(err) console.log(err);
             done({"upvoteId":id});
         });
-    }
+    };
 
     posts.markDeleted =  function(id,done){
         db.get().collection(col).update({"upvoteId" : Number.parseInt(id)}, { $set : { status : 'deleted ' }},function(err,result){
@@ -64,7 +108,7 @@ module.exports = function(col) {
             if(err) console.log(err);
             done({"upvoteId":id});
         });
-    }
+    };
 
     posts.getAll = function(done){
         console.log(db.get());
@@ -83,11 +127,11 @@ module.exports = function(col) {
                 done(null);
             }
         });
-    }
+    };
 
     var objectIdToString = function(objectId){
         return objectId.str;
-    }
+    };
 
     var newPost = function(doc){
         var name;
@@ -98,7 +142,7 @@ module.exports = function(col) {
         }
 
         return {"displayName":name,"text":doc.text,"likers":doc.likers,"upvoteId":doc.upvoteId,"id":doc._id.str};
-    }
+    };
 
     return posts;
 
